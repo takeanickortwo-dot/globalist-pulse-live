@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Globalist Pulse · Live</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'Inter',system-ui,sans-serif;background:#080c14;color:#d1d5db;padding:1.5rem;min-height:100vh}
+        .container{max-width:1200px;margin:0 auto}
+        header{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;margin-bottom:2rem}
+        .logo{font-size:1.7rem;font-weight:700;color:#f0f9ff;letter-spacing:-0.3px}
+        .logo span{color:#2dd4bf}
+        .update-badge{background:#1e293b;border-radius:2rem;padding:0.4rem 1.2rem;font-size:0.8rem;display:flex;align-items:center;gap:0.5rem;border:1px solid #334155}
+        .update-dot{width:8px;height:8px;background:#22c55e;border-radius:50%}
+        .refresh-btn{background:#1e293b;border:1px solid #475569;color:#cbd5e1;padding:0.4rem 1rem;border-radius:2rem;cursor:pointer;font-size:0.8rem;margin-left:0.5rem;transition:background 0.2s}
+        .refresh-btn:hover{background:#334155}
+        .hero-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1.2rem;margin-bottom:2rem}
+        .card{background:#101624;border-radius:1.2rem;padding:1.4rem;border:1px solid #1e293b;transition:transform 0.2s}
+        .card:hover{transform:translateY(-2px)}
+        .card-label{font-size:0.7rem;text-transform:uppercase;letter-spacing:0.7px;color:#94a3b8;margin-bottom:0.3rem}
+        .card-value{font-size:2rem;font-weight:700;color:#f8fafc;line-height:1.2}
+        .debt .card-value{color:#f87171}
+        .us-wealth .card-value{color:#60a5fa}
+        .cn-wealth .card-value{color:#fbbf24}
+        .card-detail{font-size:0.75rem;color:#64748b;margin-top:0.5rem}
+        .tabs{display:flex;flex-wrap:wrap;gap:0.4rem;margin-bottom:1.8rem;border-bottom:1px solid #1e293b;padding-bottom:0.8rem}
+        .tab-btn{background:transparent;border:none;color:#94a3b8;padding:0.5rem 1.1rem;font-size:0.85rem;font-weight:500;border-radius:2rem;cursor:pointer;transition:all 0.2s;white-space:nowrap}
+        .tab-btn.active{background:#1e293b;color:#2dd4bf;font-weight:600}
+        .tab-btn:hover{color:#e2e8f0}
+        .panel{display:none;animation:fade 0.3s ease}
+        .panel.active{display:block}
+        @keyframes fade{from{opacity:0.3;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+        .metric-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1rem;margin-top:1rem}
+        .metric-card{background:#0f1623;border-radius:1rem;padding:1.2rem;border:1px solid #1e293b}
+        .metric-name{font-size:0.75rem;text-transform:uppercase;color:#64748b;margin-bottom:0.4rem}
+        .metric-number{font-size:1.5rem;font-weight:600;color:#e2e8f0}
+        .metric-sub{font-size:0.75rem;color:#4b5563;margin-top:0.2rem}
+        .source-note{font-size:0.7rem;color:#475569;margin-top:1.5rem;padding:0.8rem;border-top:1px solid #1e293b}
+        .loading-dot{animation:blink 1s infinite}
+        @keyframes blink{50%{opacity:0}}
+    </style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <div class="logo">🌐 Globalist <span>Pulse</span></div>
+        <div class="update-badge">
+            <span class="update-dot"></span> <span id="lastUpdate">fetching live data…</span>
+            <button class="refresh-btn" onclick="refreshData()">↻ Refresh now</button>
+        </div>
+    </header>
+
+    <div class="hero-grid">
+        <div class="card debt">
+            <div class="card-label">🇺🇸 US Total Obligations</div>
+            <div class="card-value" id="usDebtVal">…</div>
+            <div class="card-detail">Debt + unfunded liabilities</div>
+        </div>
+        <div class="card us-wealth">
+            <div class="card-label">🇺🇸 US Household Wealth</div>
+            <div class="card-value" id="usWealthVal">$165.8T</div>
+            <div class="card-detail">Net worth (Q1 2026 est.)</div>
+        </div>
+        <div class="card cn-wealth">
+            <div class="card-label">🇨🇳 China Household Wealth</div>
+            <div class="card-value" id="cnWealthVal">$88.5T</div>
+            <div class="card-detail">Private wealth (UBS 2025)</div>
+        </div>
+    </div>
+
+    <div class="tabs" id="tabContainer">
+        <button class="tab-btn active" data-tab="global">🌍 Global</button>
+        <button class="tab-btn" data-tab="na">🇺🇸 NA</button>
+        <button class="tab-btn" data-tab="sa">🌎 SA</button>
+        <button class="tab-btn" data-tab="eu">🇪🇺 EU</button>
+        <button class="tab-btn" data-tab="ru">🇷🇺 RU</button>
+        <button class="tab-btn" data-tab="asia">🌏 Asia</button>
+        <button class="tab-btn" data-tab="oce">🏝️ OCE</button>
+        <button class="tab-btn" data-tab="food">🌾 Food & Land</button>
+        <button class="tab-btn" data-tab="bri">🚢 Belt & Road</button>
+        <button class="tab-btn" data-tab="planet">🌡️ Planet</button>
+        <button class="tab-btn" data-tab="soft">🎬 Soft Power</button>
+    </div>
+
+    <div id="panelContainer"></div>
+
+    <div class="source-note">
+        ⚡ Live US debt from TreasuryDirect. CO₂ attempt from NOAA (fallback static). Everything else is curated estimates. Auto‑refreshes every 6 hours.
+    </div>
+</div>
+
+<script>
+    // ---------- Static dataset (fallback & base) ----------
+    const baseData = {
+        usWealth: 165.8,
+        cnWealth: 88.5,
+        regions: {
+            global: [
+                {name:"CO₂ (ppm)", value:"427.3", sub:"Mauna Loa, static"},
+                {name:"Global Median Income", value:"$3,200", sub:"PPP, per year"},
+                {name:"Food Price Index", value:"124.8", sub:"FAO"},
+                {name:"Internet Users", value:"5.7B", sub:"67% penetration"},
+                {name:"Arctic Sea Ice Extent", value:"8.9M km²", sub:"vs 10.1 avg"},
+                {name:"Global Debt/GDP", value:"336%", sub:"IIF"}
+            ],
+            na:[
+                {name:"Median Disposable Income", value:"$38,200", sub:"US, after tax"},
+                {name:"Weekly Work Hours", value:"38.7", sub:"average"},
+                {name:"Food Basket Cost", value:"9.8%", sub:"of income"},
+                {name:"Water Stress", value:"Medium", sub:"US 28%"},
+                {name:"PM2.5", value:"7.8 µg/m³", sub:"US avg"},
+                {name:"Life Expectancy", value:"79.1", sub:"years"},
+                {name:"Gini", value:"0.485", sub:"inequality"},
+                {name:"Homicide Rate", value:"6.3", sub:"per 100k"}
+            ],
+            sa:[
+                {name:"Median Disposable Income", value:"$6,900", sub:"Brazil PPP"},
+                {name:"Weekly Work Hours", value:"43.5", sub:"avg"},
+                {name:"Food Basket Cost", value:"24%", sub:"of income"},
+                {name:"Water Stress", value:"Low-Med", sub:"variable"},
+                {name:"PM2.5", value:"15.2 µg/m³", sub:"urban"},
+                {name:"Life Expectancy", value:"75.4", sub:"years"},
+                {name:"Gini", value:"0.46", sub:"regional avg"},
+                {name:"Homicide Rate", value:"20.4", sub:"per 100k"}
+            ],
+            eu:[
+                {name:"Median Disposable Income", value:"$22,100", sub:"EU27 PPP"},
+                {name:"Weekly Work Hours", value:"37.1", sub:"avg"},
+                {name:"Food Basket Cost", value:"11.2%", sub:"of income"},
+                {name:"Water Stress", value:"Medium", sub:"Southern EU high"},
+                {name:"PM2.5", value:"11.8 µg/m³", sub:"urban"},
+                {name:"Life Expectancy", value:"81.3", sub:"years"},
+                {name:"Gini", value:"0.30", sub:"EU avg"},
+                {name:"Homicide Rate", value:"0.9", sub:"per 100k"}
+            ],
+            ru:[
+                {name:"Median Disposable Income", value:"$8,400", sub:"Russia PPP"},
+                {name:"Weekly Work Hours", value:"40.5", sub:"official"},
+                {name:"Food Basket Cost", value:"30%", sub:"of income"},
+                {name:"Water Stress", value:"Low", sub:"abundant"},
+                {name:"PM2.5", value:"13.5 µg/m³", sub:"industrial"},
+                {name:"Life Expectancy", value:"73.2", sub:"years"},
+                {name:"Gini", value:"0.36", sub:""},
+                {name:"Homicide Rate", value:"6.8", sub:"per 100k"}
+            ],
+            asia:[
+                {name:"Median Disposable Income", value:"$6,200", sub:"East & SE Asia PPP"},
+                {name:"Weekly Work Hours", value:"47.2", sub:"widespread"},
+                {name:"Food Basket Cost", value:"28%", sub:"of income"},
+                {name:"Water Stress", value:"High", sub:"India/China"},
+                {name:"PM2.5", value:"34.7 µg/m³", sub:"regional avg"},
+                {name:"Life Expectancy", value:"76.9", sub:"years"},
+                {name:"Gini", value:"0.40", sub:"diverse"},
+                {name:"Homicide Rate", value:"2.3", sub:"per 100k"}
+            ],
+            oce:[
+                {name:"Median Disposable Income", value:"$35,100", sub:"Australia PPP"},
+                {name:"Weekly Work Hours", value:"36.4", sub:"Australia"},
+                {name:"Food Basket Cost", value:"10.5%", sub:"of income"},
+                {name:"Water Stress", value:"Low-Moderate", sub:""},
+                {name:"PM2.5", value:"6.2 µg/m³", sub:"clean"},
+                {name:"Life Expectancy", value:"83.4", sub:"Australia"},
+                {name:"Gini", value:"0.34", sub:""},
+                {name:"Homicide Rate", value:"0.8", sub:"per 100k"}
+            ],
+            food:[
+                {name:"Global Cereal Production", value:"2.8B tonnes", sub:"2025/26"},
+                {name:"Arable Land (US)", value:"0.47 ha/capita", sub:""},
+                {name:"Arable Land (China)", value:"0.09 ha/capita", sub:"scarce"},
+                {name:"Food Import Dependence (China)", value:"21%", sub:"grains"},
+                {name:"Fertilizer Use (China)", value:"390 kg/ha", sub:"vs US 140"},
+                {name:"Agri Employment (India)", value:"42%", sub:"of workforce"},
+                {name:"Grain Stocks-to-Use", value:"28.5%", sub:"global comfort"}
+            ],
+            bri:[
+                {name:"BRI Projects", value:"3,200+", sub:"140 countries"},
+                {name:"Total Investment", value:"$1.1T", sub:"since 2013"},
+                {name:"Ports Under Chinese Ops", value:"101", sub:"global"},
+                {name:"Debt Risk Countries", value:"12", sub:"high distress"},
+                {name:"Africa BRI Share", value:"27%", sub:"of projects"}
+            ],
+            planet:[
+                {name:"CO₂ (Mauna Loa)", value:"427.3 ppm", sub:"live fetch attempted"},
+                {name:"Global Temp Anomaly", value:"+1.48°C", sub:"vs pre-industrial"},
+                {name:"Ocean Heat Content", value:"345 ZJ", sub:"top 2000m"},
+                {name:"Biodiversity Intactness", value:"75%", sub:"BII index"},
+                {name:"Topsoil Loss Rate", value:"24B tonnes/yr", sub:"UNCCD"}
+            ],
+            soft:[
+                {name:"Confucius Institutes", value:"480", sub:"globally"},
+                {name:"Alliance Française", value:"830", sub:"branches"},
+                {name:"Non-English Films Box Office", value:"$22B", sub:"2025"},
+                {name:"K-pop Global Streams", value:"34%", sub:"of top 100 non-English"},
+                {name:"Visa-Free Score (Japan)", value:"194", sub:"Henley #1"}
+            ]
+        }
+    };
+
+    let currentTab = 'global';
+    let liveData = { ...baseData, usDebt: 106.2, lastUpdated: new Date().toISOString() };
+
+    // ---------- Live fetchers ----------
+    async function fetchUSDebt() {
+        try {
+            const resp = await fetch('https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v2/accounting/od/debt_to_penny?sort=-record_date&limit=1');
+            const json = await resp.json();
+            const debt = parseFloat(json.data[0].tot_pub_debt_outst) / 1e12; // trillions
+            return debt + 70.0; // add unfunded liabilities (~70T)
+        } catch (e) {
+            console.warn('US debt fetch failed, using static', e);
+            return 106.2;
+        }
+    }
+
+    async function fetchCO2() {
+        try {
+            const resp = await fetch('https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_trend_gl.txt');
+            const text = await resp.text();
+            const lines = text.trim().split('\n');
+            const last = lines[lines.length-1].split(/\s+/);
+            return parseFloat(last[4]).toFixed(1);
+        } catch (e) {
+            console.warn('CO₂ fetch failed, using static', e);
+            return '427.3';
+        }
+    }
+
+    async function refreshData() {
+        document.getElementById('lastUpdate').innerHTML = '<span class="loading-dot">●</span> updating…';
+        const [usDebt, co2] = await Promise.all([fetchUSDebt(), fetchCO2()]);
+        liveData.usDebt = Math.round(usDebt * 10) / 10;
+        // inject CO₂ into both global and planet panels
+        liveData.regions.global[0].value = co2;
+        liveData.regions.planet[0].value = co2 + ' ppm';
+        liveData.lastUpdated = new Date().toISOString();
+        renderAll();
+    }
+
+    function renderAll() {
+        document.getElementById('usDebtVal').innerText = '$' + liveData.usDebt.toFixed(1) + 'T';
+        document.getElementById('usWealthVal').innerText = '$' + liveData.usWealth.toFixed(1) + 'T';
+        document.getElementById('cnWealthVal').innerText = '$' + liveData.cnWealth.toFixed(1) + 'T';
+        document.getElementById('lastUpdate').innerText = new Date(liveData.lastUpdated).toLocaleString();
+
+        const container = document.getElementById('panelContainer');
+        let html = '';
+        for (let region in liveData.regions) {
+            const metrics = liveData.regions[region];
+            html += `<div class="panel ${region === currentTab ? 'active' : ''}" id="panel-${region}">
+                <h3 style="color:#e2e8f0;margin-bottom:0.5rem;">${region.toUpperCase()}</h3>
+                <div class="metric-grid">
+                    ${metrics.map(m => `
+                        <div class="metric-card">
+                            <div class="metric-name">${m.name}</div>
+                            <div class="metric-number">${m.value}</div>
+                            <div class="metric-sub">${m.sub}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>`;
+        }
+        container.innerHTML = html;
+        // reactivate current tab
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        const btn = document.querySelector(`.tab-btn[data-tab="${currentTab}"]`);
+        if (btn) btn.classList.add('active');
+        const panel = document.getElementById(`panel-${currentTab}`);
+        if (panel) panel.classList.add('active');
+    }
+
+    function switchTab(tabId) {
+        currentTab = tabId;
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        const btn = document.querySelector(`.tab-btn[data-tab="${tabId}"]`);
+        if (btn) btn.classList.add('active');
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+        const panel = document.getElementById(`panel-${tabId}`);
+        if (panel) panel.classList.add('active');
+    }
+
+    document.getElementById('tabContainer').addEventListener('click', e => {
+        if (e.target.classList.contains('tab-btn')) switchTab(e.target.dataset.tab);
+    });
+
+    // Initial load
+    refreshData();
+
+    // Auto-refresh every 6 hours
+    setInterval(refreshData, 21600000);
+</script>
+</body>
+</html>
